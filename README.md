@@ -11,7 +11,7 @@ The platform is organised as a set of Dockerised services (see `docker-compose.y
 - **Steampipe + Powerpipe (`platform/steampipe-powerpipe`)** — Executes compliance benchmarks against cloud providers, exposing Steampipe on port `9193`.
 - **PostgreSQL (`platform/database`)** — Stores clients, credentials, scans, findings, and reporting metadata. Schema and migrations live in `platform/database`.
 
-Additional docs in the repo (`PRODUCT_SPECIFICATION.md`, `VERIFICATION_STRATEGY.md`, etc.) capture broader roadmap and validation plans.
+Additional documentation lives under `docs/` and captures roadmap, verification strategy, and implementation notes.
 
 ### Data Flow Snapshot
 
@@ -84,13 +84,16 @@ Ensure PostgreSQL and Steampipe/Powerpipe are reachable; the included Docker Com
 - Orchestrator exposes `npm run type-check` and unit testing can be added via Jest.
 - `test-api.ps1` contains sample PowerShell probes for API smoke tests.
 
-## Roadmap Notes
+## Documentation Map
 
-Reference the documentation files in the repo for detailed plans:
-
-- `VERIFICATION_IMPLEMENTATION.md` — outlines verification automation goals.
-- `SAFE_IMPLEMENTATION_PLAN.md` — security automation feature backlog.
-- `CROSS_VERIFICATION_STRATEGY.md` — describes redundancy and controls validation.
+- `docs/PRODUCT_SPECIFICATION.md` — end-to-end product vision and MVP scope.
+- `docs/SAFE_IMPLEMENTATION_PLAN.md` — security automation and maturity path.
+- `docs/VERIFICATION_IMPLEMENTATION.md` — verification automation goals.
+- `docs/CROSS_VERIFICATION_STRATEGY.md` — redundancy and control validation design.
+- `docs/README_ENV_SETUP.md` — environment configuration walkthrough.
+- `docs/HOT_RELOAD_SETUP.md` — dev hot reload guidance.
+- `docs/FRAMEWORK_DB_DATA_SOURCES.md` & `docs/FRAMEWORK_COVERAGE_DB_IMPLEMENTATION.md` — database coverage details.
+- `docs/VERIFICATION_STRATEGY.md` & `docs/VERIFICATION_FRAMEWORK.md` — compliance verification references.
 
 ## Contributing / Next Steps
 
