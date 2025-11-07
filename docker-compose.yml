@@ -1,0 +1,108 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: launchsecure-postgres
+    environment:
+      POSTGRES_USER: launchsecure
+      POSTGRES_PASSWORD: launchsecure_dev_password
+      POSTGRES_DB: launchsecure
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./platform/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./platform/database/migrations:/docker-entrypoint-initdb.d/migrations
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U launchsecure"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - launchsecure-network
+
+  steampipe-powerpipe:
+    build:
+      context: ./platform/steampipe-powerpipe
+      dockerfile: Dockerfile
+    container_name: launchsecure-steampipe-powerpipe
+    ports:
+      - "9193:9193"
+    environment:
+      PIPES_TOKEN: ${PIPES_TOKEN:-}
+    volumes:
+      - steampipe_config:/home/steampipe/.steampipe/config
+      - steampipe_plugins:/home/steampipe/.steampipe/plugins
+      - powerpipe_config:/home/steampipe/.powerpipe/config
+      - powerpipe_workspace:/workspace
+    healthcheck:
+      test: ["CMD", "steampipe", "service", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - launchsecure-network
+
+  orchestrator:
+    build:
+      context: ./platform/orchestrator
+      dockerfile: Dockerfile
+    container_name: launchsecure-orchestrator
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://launchsecure:launchsecure_dev_password@postgres:5432/launchsecure
+      STEAMPIPE_HOST: steampipe-powerpipe
+      STEAMPIPE_PORT: 9193
+      POWERPIPE_CONTAINER: launchsecure-steampipe-powerpipe
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-default-encryption-key-change-in-production}
+      PORT: 3001
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./platform/orchestrator:/app
+      - /app/node_modules
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+      steampipe-powerpipe:
+        condition: service_healthy
+    networks:
+      - launchsecure-network
+    command: npm run dev
+
+  admin-panel:
+    build:
+      context: ./platform/admin-panel
+      dockerfile: Dockerfile
+    container_name: launchsecure-admin-panel
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      API_URL: http://orchestrator:3001
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+      NEXT_WEBPACK_WATCH_OPTIONS_POLL: "true"
+      FAST_REFRESH: "true"
+    volumes:
+      - ./platform/admin-panel:/app
+      - /app/node_modules
+    depends_on:
+      - orchestrator
+    networks:
+      - launchsecure-network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+  steampipe_config:
+  steampipe_plugins:
+  powerpipe_config:
+  powerpipe_workspace:
+
+networks:
+  launchsecure-network:
+    driver: bridge
+
